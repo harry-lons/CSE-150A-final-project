@@ -13,6 +13,7 @@ def replace_tracks():
     tracks = utils.load('fma_metadata/tracks.csv')
     tracks['track'].to_csv('fma_metadata/short_tracks.csv', index=False)
 
+
 # Loads relevant data for performing MLE
 def load_data():
     tracks = pd.read_csv('fma_metadata/short_tracks.csv')
@@ -21,8 +22,22 @@ def load_data():
 
     # NOTE: Originally we assumed that each audio feature had only one value associated with it. 
     # Variables like MFCC have a ton of values associated with it.
+
+    # Also, delete rows where len(genres) == 0
+
     full_data = pd.concat([tracks, features], axis=1)
-    print(full_data)
+    
+    return tracks
+
+
+# Compute prior probabilities for each genre
+def compute_prior(tracks):
+    # NOTE: Technically we can use genres.csv for this... but since one song can have multiple genres
+    # it won't be true probability values. Should talk about this later
+    genre_counts = tracks['genres'].value_counts()
+    prior_probs = genre_counts / len(tracks)
+
+    return prior_probs 
 
 
 # Convert variable over a continuous range into a discrete value
@@ -34,5 +49,8 @@ def discretizer(value, minimum, maximum, buckets):
 
     return int((value - minimum) / bucket_size)
 
+
 if __name__ == "__main__":
-    load_data()
+    tracks = load_data()
+
+    compute_prior(tracks)
