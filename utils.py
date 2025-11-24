@@ -1,3 +1,6 @@
+# utils.py is open-source code provided by the authors of the FMA music dataset.
+# Link to file: https://github.com/mdeff/fma
+
 import dotenv
 import pydot
 import requests
