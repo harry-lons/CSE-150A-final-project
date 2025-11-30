@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
 
-BUCKETS = 10
+import preprocessing
+
 
 def infer(CPTs, x: np.ndarray):
     """
@@ -24,7 +25,7 @@ def infer(CPTs, x: np.ndarray):
     # cpts_array shape is (num_features, num_genres, BUCKETS)
     for i, val in enumerate(x):
         val = int(val)
-        if 0 <= val < BUCKETS:
+        if 0 <= val < preprocessing.BUCKETS:
             # Get probabilities for this feature value across all genres
             probs = cpts_array[i, :, val]
             log_probs += np.log(probs + epsilon)
@@ -33,6 +34,7 @@ def infer(CPTs, x: np.ndarray):
     best_genre_idx = np.argmax(log_probs)
     
     return sorted_genres[best_genre_idx]
+
 
 def loadCPTs(filename="data/cpt_output.txt"):
     """
@@ -79,9 +81,9 @@ def loadCPTs(filename="data/cpt_output.txt"):
                     prob = float(parts[2])
                     
                     if gid not in cpts_data[current_feature]:
-                        cpts_data[current_feature][gid] = np.zeros(BUCKETS)
+                        cpts_data[current_feature][gid] = np.zeros(preprocessing.BUCKETS)
                     
-                    if 0 <= val < BUCKETS:
+                    if 0 <= val < preprocessing.BUCKETS:
                         cpts_data[current_feature][gid][val] = prob
 
     # Process into numpy arrays
@@ -95,7 +97,7 @@ def loadCPTs(filename="data/cpt_output.txt"):
     num_features = len(features)
 
     # Shape: (num_features, num_genres, BUCEKTS options)
-    cpts_array = np.zeros((num_features, num_genres, BUCKETS))
+    cpts_array = np.zeros((num_features, num_genres, preprocessing.BUCKETS))
 
     for f_idx, feat in enumerate(features):
         for g_idx, genre in enumerate(sorted_genres):
@@ -108,11 +110,9 @@ def loadCPTs(filename="data/cpt_output.txt"):
     return cpts_array, priors_array, sorted_genres, features
 
 
-
-
-def test(cpts_file="data/cpt_output.txt", data_file="data/final_data.csv"):
+def test(fold, cpts_file="data/cpt_output.txt", data_file="data/final_data.csv", k=5):
     """
-    Tests inference on the last 20% of the data.
+    Tests inference on the CV fold.
     """
     print("Loading CPTs...")
     cpts_args = loadCPTs(cpts_file)
@@ -122,11 +122,14 @@ def test(cpts_file="data/cpt_output.txt", data_file="data/final_data.csv"):
     print("Loading data...")
     df = pd.read_csv(data_file)
     
-    # Split data: use last 20% for testing
-    cutoff = int(len(df) * 0.8)
-    test_df = df.iloc[cutoff:].copy()
-    print(f"Testing on {len(test_df)} samples (last 20% of data)")
-    
+    n = len(df)
+    fold_size = n // k
+    start = fold * fold_size
+    end = (fold + 1) * fold_size if fold < k - 1 else n
+
+    test_df = df.iloc[start:end].copy()
+    print(f"Testing on {len(test_df)} samples (fold={fold})")
+
     # Clean data (same as in learning.py)
     # Ensure we only look at the features the model knows about
     test_df[features] = test_df[features].replace([np.inf, -np.inf], np.nan)
@@ -151,4 +154,4 @@ def test(cpts_file="data/cpt_output.txt", data_file="data/final_data.csv"):
 
 
 if __name__ == "__main__":
-    test()
+    test(fold=4)

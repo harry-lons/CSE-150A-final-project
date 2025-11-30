@@ -1,11 +1,9 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import sklearn as skl
-import sklearn.utils, sklearn.preprocessing, sklearn.decomposition, sklearn.svm
 
 import utils
 
+BUCKETS = 100
 
 # tracks.csv has a lot of miscellaneous info we don't care about for our project
 def replace_tracks(tracks_file='fma_metadata/tracks.csv'):
@@ -63,7 +61,8 @@ def replace_features(features_file='fma_metadata/features.csv'):
 
 # Discretizes tracks and features and merges them together
 def parse_data(tracks_file='data/short_tracks.csv',
-               features_file='data/short_features.csv'):
+               features_file='data/short_features.csv',
+               quantile_based=True):
     tracks = pd.read_csv(tracks_file)
     features = pd.read_csv(features_file)
 
@@ -75,9 +74,12 @@ def parse_data(tracks_file='data/short_tracks.csv',
     discrete_features = features.copy()
 
     for col in features.columns:
-        discrete_features[col] = features[col].apply(
-            lambda x: discretizer(x, mins[col], maxs[col], 10)
-        )
+        if quantile_based:
+            discrete_features[col] = discretizer_quantile(features[col], BUCKETS)
+        else:
+            discrete_features[col] = features[col].apply(
+                lambda x: discretizer(x, mins[col], maxs[col], BUCKETS)
+            )
 
     # Merge tracks and features together
     final_data = pd.concat([tracks, discrete_features], axis=1)
@@ -93,6 +95,13 @@ def parse_data(tracks_file='data/short_tracks.csv',
     final_data.to_csv('data/final_data.csv', index=False)
 
 
+# Shuffle final_data.csv
+def shuffle_data(data_file='data/final_data.csv', random_state=681):
+    df = pd.read_csv(data_file)
+    df = df.sample(frac=1, random_state=random_state).reset_index(drop=True)
+    df.to_csv('data/shuffle_data.csv', index=False)
+
+
 # Convert variable over a continuous range into a discrete value
 def discretizer(value, minimum, maximum, buckets):
     if value < minimum: return 0
@@ -102,8 +111,11 @@ def discretizer(value, minimum, maximum, buckets):
 
     return int((value - minimum) / bucket_size)
 
+# Quantile-based discretization
+def discretizer_quantile(col, buckets):
+    return pd.qcut(col, q=buckets, labels=False, duplicates='drop')
 
 if __name__ == "__main__":
-    replace_tracks()
-    replace_features()
+    # replace_tracks()
+    # replace_features()
     parse_data()

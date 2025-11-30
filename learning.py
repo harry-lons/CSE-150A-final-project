@@ -1,5 +1,7 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
+
+import preprocessing
 
 INPUT_CSV = "data/final_data.csv"
 OUTPUT_TXT = "data/cpt_output.txt"
@@ -11,14 +13,16 @@ def normalize_counts(counts):
     else: 
         return 0
 
-
-def generate_cpts():
+def generate_cpts(fold, k=5):
     df = pd.read_csv(INPUT_CSV)
 
-    # Train on first 80% of data
-    train_cutoff = int(0.8 * len(df))
-    df = df.iloc[:train_cutoff]
-    print(f"Training on {len(df)} samples (first 80% of data)")
+    n = len(df)
+    fold_size = n // k
+    start = fold * fold_size
+    end = (fold + 1) * fold_size if fold < k - 1 else n
+
+    df = pd.concat([df.iloc[:start], df.iloc[end:]]).reset_index(drop=True)
+    print(f"Training on {len(df)} samples (fold={fold})")
 
     genre_col = "genre_id"
 
@@ -46,10 +50,10 @@ def generate_cpts():
 
             counts = subset[feat].value_counts()
 
-            bucket_counts = np.zeros(10, dtype=float)
+            bucket_counts = np.zeros(preprocessing.BUCKETS, dtype=float)
 
             for bucket, ct in counts.items():
-                if isinstance(bucket, (np.integer, int)) and 0 <= bucket < 10:
+                if isinstance(bucket, (np.integer, int)) and 0 <= bucket < preprocessing.BUCKETS:
                     bucket_counts[int(bucket)] = ct
 
             CPTs[feat][g] = normalize_counts(bucket_counts)
@@ -76,4 +80,4 @@ def generate_cpts():
             f.write("\n")
 
 if __name__ == "__main__":
-    generate_cpts()
+    generate_cpts(fold=4)
