@@ -1,8 +1,8 @@
 import pandas as pd
 import numpy as np
 
-INPUT_CSV = "fma_metadata/final_data.csv"
-OUTPUT_TXT = "cpt_output.txt"
+INPUT_CSV = "data/final_data.csv"
+OUTPUT_TXT = "data/cpt_output.txt"
 
 def normalize_counts(counts):
     total = counts.sum()

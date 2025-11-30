@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -10,14 +8,23 @@ import utils
 
 
 # tracks.csv has a lot of miscellaneous info we don't care about for our project
-def replace_tracks():
-    tracks = utils.load('fma_metadata/tracks.csv')
-    tracks['track'].to_csv('fma_metadata/short_tracks.csv', index=False)
+def replace_tracks(tracks_file='fma_metadata/tracks.csv'):
+    tracks = utils.load(tracks_file)
+
+    # Drop irrelevant features
+    tracks = tracks['track'].drop(
+        columns=['bit_rate', 'comments', 'composer', 'date_recorded',
+                 'duration', 'favorites', 'genres', 'genres_all',
+                 'information', 'interest', 'language_code', 'license',
+                 'listens', 'lyricist', 'number', 'publisher', 'tags']
+    )
+
+    tracks.to_csv('data/short_tracks.csv', index=False)
 
 
 # features.csv needs to be shortened to get rid of redundant/lengthy variables
-def replace_features():
-    features = utils.load('fma_metadata/features.csv')
+def replace_features(features_file='fma_metadata/features.csv'):
+    features = utils.load(features_file)
 
     # Drop irrelevant features
     features = features.drop(
@@ -51,13 +58,14 @@ def replace_features():
         for feat, stat, chan in features.columns
     ]
 
-    features.to_csv('fma_metadata/short_features.csv', index=False)
+    features.to_csv('data/short_features.csv', index=False)
 
 
 # Discretizes tracks and features and merges them together
-def parse_data():
-    tracks = pd.read_csv('fma_metadata/short_tracks.csv')
-    features = pd.read_csv('fma_metadata/short_features.csv')
+def parse_data(tracks_file='data/short_tracks.csv',
+               features_file='data/short_features.csv'):
+    tracks = pd.read_csv(tracks_file)
+    features = pd.read_csv(features_file)
 
     # Compute min and max per column
     mins = features.min()
@@ -72,30 +80,17 @@ def parse_data():
         )
 
     # Merge tracks and features together
-    full_data = pd.concat([tracks, discrete_features], axis=1)
+    final_data = pd.concat([tracks, discrete_features], axis=1)
 
     # Get rid of tracks where genre_top is not populated
-    full_data = full_data.dropna(subset=['genre_top'])
+    final_data = final_data.dropna(subset=['genre_top'])
     
     # Remap genre_top titles to use genre_id specified in genres.csv
     genres = utils.load("fma_metadata/genres.csv")
     genre_map = dict(zip(genres['title'], genres['top_level']))
-    full_data['genre_id'] = full_data['genre_top'].map(genre_map)
+    final_data['genre_id'] = final_data['genre_top'].map(genre_map)
 
-    full_data.to_csv('fma_metadata/full_data.csv', index=False)
-
-
-# Remove every unnecessary feature from full_data.csv
-def shorten_full_data():
-    full_data = pd.read_csv("fma_metadata/full_data.csv")
-    final_data = full_data.drop(
-        columns=['bit_rate', 'comments', 'composer', 'date_recorded',
-                 'duration', 'favorites', 'genres', 'genres_all',
-                 'information', 'interest', 'language_code', 'license',
-                 'listens', 'lyricist', 'number', 'publisher', 'tags']
-    )
-
-    final_data.to_csv('fma_metadata/final_data.csv', index=False)
+    final_data.to_csv('data/final_data.csv', index=False)
 
 
 # Convert variable over a continuous range into a discrete value
@@ -109,4 +104,6 @@ def discretizer(value, minimum, maximum, buckets):
 
 
 if __name__ == "__main__":
-    shorten_full_data()
+    replace_tracks()
+    replace_features()
+    parse_data()

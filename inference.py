@@ -34,7 +34,7 @@ def infer(CPTs, x: np.ndarray):
     
     return sorted_genres[best_genre_idx]
 
-def loadCPTs(filename="cpt_output.txt"):
+def loadCPTs(filename="data/cpt_output.txt"):
     """
     Parses the CPT file and returns:
       - cpts_array: (num_features, num_genres, BUCKETS)
@@ -110,7 +110,7 @@ def loadCPTs(filename="cpt_output.txt"):
 
 
 
-def test(cpts_file="cpt_output.txt", data_file="fma_metadata/final_data.csv"):
+def test(cpts_file="data/cpt_output.txt", data_file="data/final_data.csv"):
     """
     Tests inference on the last 20% of the data.
     """
