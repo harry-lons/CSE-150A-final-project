@@ -15,6 +15,11 @@ def normalize_counts(counts):
 def generate_cpts():
     df = pd.read_csv(INPUT_CSV)
 
+    # Train on first 80% of data
+    train_cutoff = int(0.8 * len(df))
+    df = df.iloc[:train_cutoff]
+    print(f"Training on {len(df)} samples (first 80% of data)")
+
     genre_col = "genre_id"
 
     feature_cols = df.select_dtypes(include=[np.number]).columns.tolist()
