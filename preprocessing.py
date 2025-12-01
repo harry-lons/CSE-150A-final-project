@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import json
 
 import utils.utils as utils
 
@@ -21,8 +22,11 @@ def replace_tracks(tracks_file='fma_metadata/tracks.csv'):
 
 
 # features.csv needs to be shortened to get rid of redundant/lengthy variables
-def replace_features(features_file='fma_metadata/features.csv'):
-    features = utils.load(features_file)
+def replace_features(features_file='fma_metadata/features.csv', custom_features=None):
+    if custom_features is None:
+        features = utils.load(features_file)
+    else:
+        features = custom_features.copy()
 
     # Drop irrelevant features
     features = features.drop(
@@ -56,7 +60,10 @@ def replace_features(features_file='fma_metadata/features.csv'):
         for feat, stat, chan in features.columns
     ]
 
-    features.to_csv('data/short_features.csv', index=False)
+    if custom_features is None:
+        features.to_csv('data/short_features.csv', index=False)
+    else:
+        return features
 
 
 # Discretizes tracks and features and merges them together
@@ -72,14 +79,21 @@ def parse_data(tracks_file='data/short_tracks.csv',
 
     # Apply discretizer to each column
     discrete_features = features.copy()
-
+    bin_edges = {}
     for col in features.columns:
         if quantile_based:
-            discrete_features[col] = discretizer_quantile(features[col], BUCKETS)
+            discrete_features[col], bins = discretizer_quantile(features[col], BUCKETS)
+
+            # NOTE: Custom inference is only available if data uses quantile-based discretization
+            bin_edges[col] = bins.tolist()
+
         else:
             discrete_features[col] = features[col].apply(
                 lambda x: discretizer(x, mins[col], maxs[col], BUCKETS)
             )
+
+    # Save bin edges for custom inference
+    json.dump(bin_edges, open('data/bin_edges.json', 'w'))
 
     # Merge tracks and features together
     final_data = pd.concat([tracks, discrete_features], axis=1)
@@ -88,12 +102,27 @@ def parse_data(tracks_file='data/short_tracks.csv',
     final_data = final_data.dropna(subset=['genre_top'])
     
     # Remap genre_top titles to use genre_id specified in genres.csv
-    genres = utils.load("fma_metadata/genres.csv")
+    genres = utils.load('fma_metadata/genres.csv')
     genre_map = dict(zip(genres['title'], genres['top_level']))
     final_data['genre_id'] = final_data['genre_top'].map(genre_map)
 
     final_data.to_csv('data/final_data.csv', index=False)
 
+
+# Used to discretize new songs for custom inference
+def custom_discretizer(features, bin_edges, buckets):
+    def discretize_new_value(value, bins, buckets):
+        idx = np.digitize([value], bins[1:-1])[0]
+        return min(idx, buckets-1)
+    
+    discrete_features = features.copy()
+    for col in features.columns:
+        bins = bin_edges[col]
+        discrete_features[col] = features[col].apply(
+            lambda x: discretize_new_value(x, bins, buckets)
+        )
+
+    return discrete_features
 
 # Shuffle final_data.csv
 def shuffle_data(data_file='data/final_data.csv', random_state=815):
@@ -113,7 +142,10 @@ def discretizer(value, minimum, maximum, buckets):
 
 # Quantile-based discretization
 def discretizer_quantile(col, buckets):
-    return pd.qcut(col, q=buckets, labels=False, duplicates='drop')
+    categories, bins = pd.qcut(
+        col, q=buckets, labels=False, retbins=True, duplicates='drop'
+    )
+    return categories, bins
 
 if __name__ == "__main__":
     # replace_tracks()

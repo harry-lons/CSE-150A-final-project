@@ -21,7 +21,8 @@ def generate_cpts(fold, k=5):
     start = fold * fold_size
     end = (fold + 1) * fold_size if fold < k - 1 else n
 
-    df = pd.concat([df.iloc[:start], df.iloc[end:]]).reset_index(drop=True)
+    if k != 1:
+        df = pd.concat([df.iloc[:start], df.iloc[end:]]).reset_index(drop=True)
     print(f"Training on {len(df)} samples (fold={fold})")
 
     genre_col = "genre_id"

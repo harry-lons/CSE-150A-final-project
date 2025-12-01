@@ -114,7 +114,8 @@ def test(
         fold, 
         cpts_file="data/cpt_output.txt", 
         data_file="data/final_data.csv", 
-        k=5
+        k=5,
+        custom_data=None
     ):
     """
     Tests inference on the CV fold.
@@ -125,15 +126,20 @@ def test(
     _, _, _, features = cpts_args
     
     print("Loading data...")
-    df = pd.read_csv(data_file)
+    test_df = None
+    if custom_data is None:
+        df = pd.read_csv(data_file)
     
-    n = len(df)
-    fold_size = n // k
-    start = fold * fold_size
-    end = (fold + 1) * fold_size if fold < k - 1 else n
+        n = len(df)
+        fold_size = n // k
+        start = fold * fold_size
+        end = (fold + 1) * fold_size if fold < k - 1 else n
 
-    test_df = df.iloc[start:end].copy()
-    print(f"Testing on {len(test_df)} samples (fold={fold})")
+        test_df = df.iloc[start:end].copy()
+        print(f"Testing on {len(test_df)} samples (fold={fold})")
+    else:
+        test_df = custom_data.copy()
+        print(f"Testing on {len(test_df)} custom samples")
 
     # Clean data (same as in learning.py)
     # Ensure we only look at the features the model knows about
@@ -147,14 +153,17 @@ def test(
     y_true, y_pred = [], []
 
     for idx, row in test_df.iterrows():
-        ground_truth = row['genre_id']
         x = row[features].values
         
         predicted_genre = infer(cpts_args, x)
-        
+        y_pred.append(predicted_genre)            
+
+        if custom_data is not None:
+            continue  # No ground truth available
+
+        ground_truth = row['genre_id']
         y_true.append(ground_truth)
-        y_pred.append(predicted_genre)
-        
+
         if predicted_genre == ground_truth:
             correct += 1
             
