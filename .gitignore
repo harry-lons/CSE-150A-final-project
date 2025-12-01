@@ -1,6 +1,6 @@
 .venv
 .DS_Store
-/__pycache__
+*__pycache__
 fma_metadata/tracks.csv
 fma_metadata/features.csv
 songs

@@ -27,8 +27,8 @@ def first_iteration():
 # 5-fold cross-validation function with quantile-based discretization (100 buckets)
 def second_iteration():
     preprocessing.BUCKETS = 100
-    # preprocessing.parse_data(quantile_based=True)
-    # preprocessing.shuffle_data()
+    preprocessing.parse_data(quantile_based=True)
+    preprocessing.shuffle_data()
 
     learning.INPUT_CSV = "data/shuffle_data.csv"
     
@@ -51,10 +51,9 @@ def second_iteration():
     genre_map = dict(zip(genres.index, genres['title']))
     display_labels = [genre_map[g] for g in labels]
 
-    cm = confusion_matrix(full_y_true, full_y_pred)
+    cm = confusion_matrix(full_y_true, full_y_pred, normalize='true')
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=display_labels)
     disp.plot(cmap="Blues", xticks_rotation=45)
-    plt.savefig('cm_2nditer.png')
     plt.show()
 
 
