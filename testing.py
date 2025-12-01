@@ -9,7 +9,7 @@ import inference
 def first_iteration():
     preprocessing.BUCKETS = 10
     preprocessing.parse_data(quantile_based=False)
-    preprocessing.shuffle_data(random_state=616)
+    preprocessing.shuffle_data()
 
     learning.INPUT_CSV = "data/shuffle_data.csv"
     
@@ -26,7 +26,7 @@ def first_iteration():
 def second_iteration():
     preprocessing.BUCKETS = 100
     preprocessing.parse_data(quantile_based=True)
-    preprocessing.shuffle_data(random_state=815)
+    preprocessing.shuffle_data()
 
     learning.INPUT_CSV = "data/shuffle_data.csv"
     
@@ -39,6 +39,16 @@ def second_iteration():
     print(f"Average accuracy: {sum(accuracies) / k:.2%}")
 
 
+def custom_inference():
+    preprocessing.BUCKETS = 100
+
+    learning.INPUT_CSV = "data/final_data.csv"
+    learning.generate_cpts(fold=0, k=1)  # Train on all data
+
+
+
 if __name__ == "__main__":
-    # first_iteration()
+    first_iteration()
     second_iteration()
+
+    custom_inference()

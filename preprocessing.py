@@ -96,7 +96,7 @@ def parse_data(tracks_file='data/short_tracks.csv',
 
 
 # Shuffle final_data.csv
-def shuffle_data(data_file='data/final_data.csv', random_state=681):
+def shuffle_data(data_file='data/final_data.csv', random_state=815):
     df = pd.read_csv(data_file)
     df = df.sample(frac=1, random_state=random_state).reset_index(drop=True)
     df.to_csv('data/shuffle_data.csv', index=False)
