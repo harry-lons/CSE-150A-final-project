@@ -98,9 +98,9 @@ def custom_inference():
     # Construct prediction table
     preds = pd.DataFrame({
         'filename': audio_files,
-        'predicted_genre_id': y_pred
+        'pred_genre_id': y_pred
     })
-    preds['predicted_genre'] = preds['predicted_genre_id'].map(genre_map)
+    preds['pred_genre'] = preds['pred_genre_id'].map(genre_map)
 
     print(preds)
     return preds
