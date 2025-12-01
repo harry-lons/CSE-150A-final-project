@@ -110,7 +110,12 @@ def loadCPTs(filename="data/cpt_output.txt"):
     return cpts_array, priors_array, sorted_genres, features
 
 
-def test(fold, cpts_file="data/cpt_output.txt", data_file="data/final_data.csv", k=5):
+def test(
+        fold, 
+        cpts_file="data/cpt_output.txt", 
+        data_file="data/final_data.csv", 
+        k=5
+    ):
     """
     Tests inference on the CV fold.
     """
@@ -139,18 +144,23 @@ def test(fold, cpts_file="data/cpt_output.txt", data_file="data/final_data.csv",
     correct = 0
     total = len(test_df)
     
+    y_true, y_pred = [], []
+
     for idx, row in test_df.iterrows():
         ground_truth = row['genre_id']
         x = row[features].values
         
         predicted_genre = infer(cpts_args, x)
         
+        y_true.append(ground_truth)
+        y_pred.append(predicted_genre)
+        
         if predicted_genre == ground_truth:
             correct += 1
             
     accuracy = correct / total
     print(f"Accuracy: {accuracy:.2%} ({correct}/{total})")
-    return accuracy
+    return accuracy, y_true, y_pred
 
 
 if __name__ == "__main__":

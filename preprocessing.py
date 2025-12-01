@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-import utils
+import utils.utils as utils
 
 BUCKETS = 100
 

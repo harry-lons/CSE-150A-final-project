@@ -1,5 +1,7 @@
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
 
+import utils.utils as utils
 import preprocessing
 import learning
 import inference
@@ -17,7 +19,7 @@ def first_iteration():
     accuracies = []
     for i in range(k):
         learning.generate_cpts(fold=i, k=k)
-        accuracies.append(inference.test(fold=i, k=k))
+        accuracies.append(inference.test(fold=i, k=k)[0])
     
     print(f"Average accuracy: {sum(accuracies) / k:.2%}")
 
@@ -25,18 +27,35 @@ def first_iteration():
 # 5-fold cross-validation function with quantile-based discretization (100 buckets)
 def second_iteration():
     preprocessing.BUCKETS = 100
-    preprocessing.parse_data(quantile_based=True)
-    preprocessing.shuffle_data()
+    # preprocessing.parse_data(quantile_based=True)
+    # preprocessing.shuffle_data()
 
     learning.INPUT_CSV = "data/shuffle_data.csv"
     
     k = 5
     accuracies = []
+    full_y_true, full_y_pred = [], []
     for i in range(k):
         learning.generate_cpts(fold=i, k=k)
-        accuracies.append(inference.test(fold=i, k=k))
-    
+        accuracy, y_true, y_pred = inference.test(fold=i, k=k)
+        print(y_true.count(15))
+        full_y_true.extend(y_true)
+        full_y_pred.extend(y_pred)
+        accuracies.append(accuracy)
+
     print(f"Average accuracy: {sum(accuracies) / k:.2%}")
+
+    # Confusion matrix
+    genres = utils.load("fma_metadata/genres.csv")
+    labels = sorted(set(genres['top_level']))
+    genre_map = dict(zip(genres.index, genres['title']))
+    display_labels = [genre_map[g] for g in labels]
+
+    cm = confusion_matrix(full_y_true, full_y_pred)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=display_labels)
+    disp.plot(cmap="Blues", xticks_rotation=45)
+    plt.savefig('cm_2nditer.png')
+    plt.show()
 
 
 def custom_inference():
@@ -48,7 +67,7 @@ def custom_inference():
 
 
 if __name__ == "__main__":
-    first_iteration()
+    # first_iteration()
     second_iteration()
 
-    custom_inference()
+    # custom_inference()
