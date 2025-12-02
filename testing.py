@@ -82,8 +82,8 @@ def custom_inference():
     new_songs = pd.DataFrame(features_list)
     new_songs = preprocessing.replace_features(custom_features=new_songs)
 
+    # Use the bin edges from training data to discretize new songs
     bin_edges = json.load(open('data/bin_edges.json', 'r'))
-    
     new_songs = preprocessing.custom_discretizer(
         new_songs, bin_edges, preprocessing.BUCKETS
     )
